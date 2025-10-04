@@ -1,5 +1,6 @@
 ## 使用方法
 克隆本项目到本地，在项目目录中运行如下命令
+### 从源代码
 ```bash
 docker build -t zam_ser:alpine -f Dockerfile .
 docker run -itd \
@@ -9,7 +10,10 @@ docker run -itd \
   -e TG_USERID=id \
   zam_ser:alpine
 ```
-
+### 从dokcer镜像
+```bash
+docker run -itd -e USERNAME=a@abc.com -e PASSWORD=pass -e TG_TOKEN=token -e TG_USERID=id ghcr.io/liveqte/zampto_renew:latest
+```
 ## 环境变量说明
 | 变量名      | 示例值         | 说明                                         | 是否必填 |
 |-------------|----------------|----------------------------------------------|-----------|
