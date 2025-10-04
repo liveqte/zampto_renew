@@ -232,6 +232,9 @@ async def main():
         await open_server_overview_page()
         print(f"url_now:{page.url}")
         await asyncio.sleep(2)
+        if "auth/" in page.url:
+            print("⚠️ 登录没有成功，请检查认证信息是否正确，若正确，请尝试换一个的网络环境下执行")
+            exit(1)
         await open_server_tab()
         print(f"url_now:{page.url}")
         if check_google() and info and tgbot_token and user_id :
