@@ -14,13 +14,19 @@ jobs:
       - name: 拉取代码
         uses: actions/checkout@v4
 
-      - name: 执行 Zampto Renew 容器
-        run: |
-          docker run -itd \
-            -e USERNAME=${{ secrets.USERNAME }} \
-            -e PASSWORD=${{ secrets.PASSWORD }} \
-            -e TG_TOKEN=${{ secrets.TG_TOKEN }} \
-            -e TG_USERID=${{ secrets.TG_USERID }} \
-            -v ${{ github.workspace }}/zampto_server.py:/app/zampto_server.py \
-            -v ${{ github.workspace }}/requirements.txt:/app/requirements.txt \
-            ghcr.io/liveqte/zampto_renew:latest
+      - name: 检查 Docker 是否可用
+        run: docker --version
+        
+      - name: 检查文件是否复制进来
+        run: ls -la
+      
+      # - name: 执行 Zampto Renew 容器
+      #   run: |
+      #     docker run -itd \
+      #       -e USERNAME=${{ secrets.USERNAME }} \
+      #       -e PASSWORD=${{ secrets.PASSWORD }} \
+      #       -e TG_TOKEN=${{ secrets.TG_TOKEN }} \
+      #       -e TG_USERID=${{ secrets.TG_USERID }} \
+      #       -v ${{ github.workspace }}/zampto_server.py:/app/zampto_server.py \
+      #       -v ${{ github.workspace }}/requirements.txt:/app/requirements.txt \
+      #       ghcr.io/liveqte/zampto_renew:latest
