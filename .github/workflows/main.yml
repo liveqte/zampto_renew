@@ -17,8 +17,14 @@ jobs:
       - name: 检查 Docker 是否可用
         run: docker --version
         
-      - name: 检查文件是否复制进来
-        run: ls -la
+      - name: 检查 Secrets 是否设置
+        run: |
+          if [ -z "${{ secrets.USERNAME }}" ] || [ -z "${{ secrets.PASSWORD }}" ]; then
+            echo "❌ USERNAME 或 PASSWORD 未设置，终止执行。"
+            exit 1
+          fi
+          echo "✅ USERNAME 已设置为：${{ secrets.USERNAME }}"
+
       
       # - name: 执行 Zampto Renew 容器
       #   run: |
