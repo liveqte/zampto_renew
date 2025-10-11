@@ -24,7 +24,7 @@ jobs:
           
       - name: 执行 Zampto Renew 容器
         run: |
-          docker run -itd \
+          docker run -it \
             -e USERNAME=${{ secrets.USERNAME }} \
             -e PASSWORD=${{ secrets.PASSWORD }} \
             -e TG_TOKEN=${{ secrets.TG_TOKEN }} \
