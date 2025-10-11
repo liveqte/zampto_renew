@@ -4,7 +4,7 @@ on:
   workflow_dispatch:  # 手动触发
   schedule:
     - cron: '5 3 * * 3'  # 每周三
-    - cron: '5 4 * * 6'  # 每周六
+    - cron: '5 2 * * 0'  # 每周日
 
 jobs:
   run-zampto:
