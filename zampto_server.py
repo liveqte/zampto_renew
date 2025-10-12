@@ -7,6 +7,7 @@ import asyncio
 import logging
 import random
 import requests
+from datetime import datetime
 
 # 定义两个候选路径
 chrome_candidates = [
@@ -65,6 +66,16 @@ if not user_id:
     print("💡 请使用 Docker 的 -e TG_USERID=your_user_id 传入。")
 
 info = ""
+def capture_screenshot( file_name=None,save_dir='screenshots'):
+    global page
+    import os
+    os.makedirs(save_dir, exist_ok=True)
+    if not file_name:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        file_name = f'screenshot_{timestamp}.png'
+    full_path = os.path.join(save_dir, file_name)
+    page.get_screenshot(path=save_dir, name=file_name, full_page=True)
+    print(f"📸 截图已保存：{full_path}")
 
 def tg_notifacation(meg):
     url = f"https://api.telegram.org/bot{tgbot_token}/sendMessage"
@@ -88,7 +99,7 @@ def setup(user_agent: str, user_data_path: str = None):
         # .set_argument('--guest')
         .set_argument('--no-sandbox')
         .set_argument('--disable-gpu')
-        .set_argument('--remote-debugging-port=9333')
+        .set_argument('--window-size=1280,800')
         .set_browser_path(binpath)
     )
     if user_data_path:
@@ -156,13 +167,12 @@ def click_if_cookie_option(tab):
         print('发现出现cookie使用协议，跳过')
 
 def renew_server(tab):
-    global std_logger
     renewbutton = tab.ele("x://a[contains(@onclick, 'handleServerRenewal')]", timeout=15)
     if renewbutton:
-        std_logger.info(f"找到{renewbutton}")
-        xof = random.randint(5, 20)
-        yof = random.randint(5, 10)
-        renewbutton.offset(x=xof, y=yof).click(by_js=False)
+        print(f"找到{renewbutton}")
+        renewbutton.click(by_js=False)
+    else:
+        print("没找到renew按钮，无事发生")
 
 def check_renew_result(tab):
     global info
@@ -211,18 +221,21 @@ async def open_server_tab():
     server_list = []
     for a in manage_server:
         server_list.append(a.attr('href'))
+    if not server_list:
+        error_exit("⚠️ server_list 为空，跳过服务器续期流程")
     for s in server_list:
         page.get(s)
         await asyncio.sleep(5)
         renew_server(page)
         check_renew_result(page)
+        capture_screenshot(f"{s}.png")
 
 def error_exit(msg):
     global std_logger
     std_logger.debug(f"[ERROR] {msg}")
     exit_process()
 def exit_process():
-    page.quit()
+    # page.quit()
     exit(1)
 
 async def open_server_overview_page():
@@ -231,15 +244,13 @@ async def open_server_overview_page():
         hosting = page.ele('x://button[contains(@onclick, "redirectTo(\'https://hosting.zampto.net/\')")]')
         if hosting:
             std_logger.info(f"找到hosting入口点击{hosting}")
-            xof = random.randint(20, 60)
-            yof = random.randint(5, 30)
-            hosting.offset(x=xof, y=yof).click(by_js=False)
+            hosting.click(by_js=False)
     else:
         std_logger.error("没有在帐户主页找到hosting入口，回退到直接访问")
         url = 'https://hosting.zampto.net/'
         page.get(url)
     await asyncio.sleep(random.randint(7, 10))
-    if page.url.endswith("/auth"):
+    if page.url.endswith("/auth") or page.url.endswith("/auth/"):
         login_hosting= page.ele('x://*[@class="login-btn pulse"]', timeout=15)
         if login_hosting:
             std_logger.info(f"找到login_or_sign_with_zampto点击{login_hosting}")
@@ -249,7 +260,8 @@ async def open_server_overview_page():
             await asyncio.sleep(random.randint(4, 6))
         else:
             std_logger.error("不能找到login_or_sign_with_zampto按钮,跳过")
-
+    else:
+        std_logger.info("你居然直接跳过hosting二阶段登录，这不可能发生")
 
     url = 'https://hosting.zampto.net/?page=overview'
     page.get(url)
@@ -278,8 +290,10 @@ async def main():
     try:
         await login()
         std_logger.debug(f"url_now:{page.url}")
+        capture_screenshot("login.png")
         await open_server_overview_page()
         std_logger.debug(f"url_now:{page.url}")
+        capture_screenshot("server_overview.png")
         await asyncio.sleep(2)
 
         await open_server_tab()
@@ -290,7 +304,7 @@ async def main():
         print(f"执行过程中出现错误: {e}")
         # 可以选择记录日志或发送错误通知
     finally:
-        page.quit()
+        # page.quit()
         std_logger.info("浏览器已关闭，避免进程驻留")
 
 # 在脚本入口点运行
