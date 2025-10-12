@@ -1,8 +1,23 @@
-## 进展
-开发中，先别fork
 ## 使用方法
 克隆本项目到本地，在项目目录中运行如下命令
 ### 从源代码
+```bash
+#克隆项目
+git clone https://github.com/liveqte/zampto_renew.git
+cd zampto_renew
+```
+```
+#编辑zampto_renew.py添加你的chrome浏览器执行目录
+nano zampto_renew.py
+```
+```
+#安装python虚拟环境和依赖，并运行
+python3 -m venv /venv \
+    && /venv/bin/pip install --upgrade pip \
+        && /venv/bin/pip install -r requirements.txt
+/venv/bin/python zampto_server.py
+```
+### 从dockerfile
 ```bash
 docker build -t zam_ser:alpine -f Dockerfile .
 docker run -itd \
@@ -29,6 +44,6 @@ docker run -itd -e USERNAME=a@abc.com -e PASSWORD=pass -e TG_TOKEN=token -e TG_U
 
 二、是否使用本工具的选择权在你手中，风险请自行承担。
 
-三、脚本靠模拟点击网页元素，有时效性，如果网页一直不改就能一直用，如果改了就不行了，~~我账号已经被限制，所以没有办法进行维护，后期如果有申请到新账号再说。~~ 新号已经下来，近期会更新Github action流程。
+三、脚本靠模拟点击网页元素，有时效性，如果网页一直不改就能一直用，如果改了就不行了，~~我账号已经被限制，所以没有办法进行维护，后期如果有申请到新账号再说。~~ 新号已经下来，~~近期会更新Github action流程~~ 放弃，因为网络环境不符合登录条件。
 
 四、账户登录我只在idx网络环境下失败，其他随便找一个游戏机的节点就能成功。
