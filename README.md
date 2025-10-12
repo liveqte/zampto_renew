@@ -12,6 +12,9 @@ cd zampto_renew
 nano zampto_renew.py
 ```
 ```
+#设置账户密码
+export USERNAME=a@abc.com
+export PASSWORD=pass
 #安装python虚拟环境和依赖，并运行
 python3 -m venv /venv \
     && /venv/bin/pip install --upgrade pip \
