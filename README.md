@@ -1,11 +1,12 @@
 ## 使用方法
-克隆本项目到本地，在项目目录中运行如下命令
-### 从源代码
+克隆本项目到本地
 ```bash
 #克隆项目
 git clone https://github.com/liveqte/zampto_renew.git
 cd zampto_renew
 ```
+在目录中任意选择一种方式中运行本仓库
+### 从源代码
 ```
 #编辑zampto_renew.py添加你的chrome浏览器执行目录
 nano zampto_renew.py
