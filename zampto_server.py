@@ -239,7 +239,7 @@ async def open_server_overview_page():
         url = 'https://hosting.zampto.net/'
         page.get(url)
     await asyncio.sleep(random.randint(7, 10))
-    if page.url.endswith("auth/"):
+    if page.url.endswith("/auth"):
         login_hosting= page.ele('x://*[@class="login-btn pulse"]', timeout=15)
         if login_hosting:
             std_logger.info(f"找到login_or_sign_with_zampto点击{login_hosting}")
@@ -264,7 +264,7 @@ async def login():
     await asyncio.sleep(10)
     clickloginin(page)
     await asyncio.sleep(random.randint(7, 9))
-    if "auth/" in page.url:
+    if "/auth" in page.url:
         info+=f"⚠️ {username}登录失败，请检查认证信息是否正确，若正确，可能是CF盾阻止了此IP访问，请尝试换一个的网络环境下执行\n"
         error_exit(f"{username}登录失败，请检查认证信息是否正确，若正确，可能是CF盾阻止了此IP访问，请尝试换一个的网络环境下执行")
     else:
