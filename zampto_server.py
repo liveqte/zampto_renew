@@ -82,7 +82,7 @@ def setup(user_agent: str, user_data_path: str = None):
     options = (
         ChromiumOptions()
         .auto_port()
-        # .headless()
+        .headless()
         .incognito(True)
         .set_user_agent(user_agent)
         # .set_argument('--guest')
