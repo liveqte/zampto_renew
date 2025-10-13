@@ -235,7 +235,7 @@ def error_exit(msg):
     std_logger.debug(f"[ERROR] {msg}")
     exit_process()
 def exit_process():
-    # page.quit()
+    page.quit()
     exit(1)
 
 async def open_server_overview_page():
@@ -304,7 +304,7 @@ async def main():
         print(f"执行过程中出现错误: {e}")
         # 可以选择记录日志或发送错误通知
     finally:
-        # page.quit()
+        page.quit()
         std_logger.info("浏览器已关闭，避免进程驻留")
 
 # 在脚本入口点运行
