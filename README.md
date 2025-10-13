@@ -43,6 +43,9 @@ docker run -itd -e USERNAME=a@abc.com -e PASSWORD=pass -e TG_TOKEN=token -e TG_U
 | `TG_TOKEN`  | `token`        | Telegram Bot 的访问令牌，用于发送通知消息    | ❌ 否      |
 | `TG_USERID` | `id`           | Telegram 用户的 ID，Bot 将消息发送到该用户    | ❌ 否      |
 
+## 捕捉图像
+运行脚本后，会在screenshots\下生成捕捉图像，可以校验结果。
+
 ## 注意
 一、开发此工具时，我的账号可能因为多次登录，以及异地登录，已经被限制不可访问hosting服务，所以推荐只在固定IP使用，并且不要在短时间运行多次docker镜像。
 
