@@ -8,8 +8,12 @@ import logging
 import random
 import requests
 from datetime import datetime
-
-# 定义两个候选路径
+import argparse
+#解析参数
+parser = argparse.ArgumentParser(description="-k 在脚本运行结束后不结束浏览器")
+parser.add_argument('-k', '--keep', action='store_true', help='启用保留模式')
+iargs = parser.parse_args()
+# 定义浏览器可执行候选路径
 chrome_candidates = [
     "/usr/bin/chromium",
     "/usr/lib/chromium/chromium",
@@ -42,6 +46,7 @@ Settings.set_language('en')
 # 浏览器参数
 options: ChromiumOptions
 page: ChromiumPage
+browser: Chromium
 
 binpath = os.environ.get('CHROME_PATH', chromepath)
 # 登录信息
@@ -89,23 +94,30 @@ def tg_notifacation(meg):
 
 def setup(user_agent: str, user_data_path: str = None):
     global options
-    global page
+    global page,browser
     options = (
         ChromiumOptions()
         .auto_port()
-        .headless()
         .incognito(True)
         .set_user_agent(user_agent)
-        # .set_argument('--guest')
+        .set_argument('--guest')
         .set_argument('--no-sandbox')
         .set_argument('--disable-gpu')
         .set_argument('--window-size=1280,800')
         .set_browser_path(binpath)
     )
+    if 'DISPLAY' not in os.environ:
+        options.headless(True)
+        std_logger.info("✅ DISPLAY环境变量为空，浏览器使用无头模式")
+    else:
+        options.headless(False)
+        std_logger.info("✅ DISPLAY环境变量存在，浏览器使用正常模式")
     if user_data_path:
         options.set_user_data_path(user_data_path)
-    page = ChromiumPage(options)
-
+    # 创建 Chromium 浏览器对象
+    browser = Chromium(options)
+    # 获取当前激活的标签页
+    page = browser.latest_tab
 
 def inputauth(inpage):
     u = inpage.ele('x://*[@id="email"]')
@@ -129,7 +141,7 @@ def check_element(desc, element, exit_on_fail=True):
     else:
         std_logger.debug(f'✗ {desc}: 获取失败')
         if exit_on_fail:
-            std_logger.error('cloudflare认证失败，退出')
+            std_logger.error('✗ cloudflare认证失败，退出')
             exit(1)
         return False
 
@@ -152,13 +164,8 @@ async def solve_turnstile(logger: logging.Logger, url: str):
 
     checkbox = body.shadow_root.ele('x://label/input', timeout=30)
     check_element('iframe1-body-checkbox', checkbox)
-
     checkbox.click(by_js=False)
-
-def dev_setup():
-    global page
-    page = Chromium(18518).latest_tab
-
+    std_logger.info(f"✅ 找到验证框，点击{checkbox}")
 
 def click_if_cookie_option(tab):
     deny = tab.ele("x://button[@class='fc-button fc-cta-do-not-consent fc-secondary-button']", timeout=15)
@@ -178,6 +185,7 @@ def check_renew_result(tab):
     global info
     renew_notifacation = tab.ele('x:// *[ @ id = "renewalSuccess"] / div', timeout=15)
     server_name_span = page.ele('x://*[@id="js-check"]/div[2]/div/div[1]/h1/span[2]', timeout=15)
+    info += f'🍕 Zampto续期通知\n'
     if not server_name_span:
         info += f'❌ [严重错误] 无法检查服务器存活时间状态，已终止程序执行！\n'
         print("❌ [严重错误] 无法检查服务器存活时间状态，已终止程序执行！")
@@ -212,7 +220,15 @@ def check_google():
         print(f"❌ ⚠️ 无法访问 Google，tg通知将不起作用：{e}")
         return False
 
+def require_browser_alive(func):
+    def wrapper(*args, **kwargs):
+        global browser
+        if browser.tabs_count == 0:
+            error_exit("⚠️ 页面已崩溃或未附加，请重试运行一次脚本/镜像")
+        return func(*args, **kwargs)
+    return wrapper
 
+@require_browser_alive
 async def open_server_tab():
     global std_logger
     manage_server = page.eles("x://a[contains(@href, '?page=server')]", timeout=15)
@@ -228,16 +244,25 @@ async def open_server_tab():
         await asyncio.sleep(5)
         renew_server(page)
         check_renew_result(page)
+        await asyncio.sleep(3)
         capture_screenshot(f"{s}.png")
+
 
 def error_exit(msg):
     global std_logger
     std_logger.debug(f"[ERROR] {msg}")
     exit_process()
 def exit_process():
-    page.quit()
-    exit(1)
+    global iargs
+    if iargs.keep:
+        print("✅ 启用了 -k 参数，保留浏览器模式")
+        exit(1)
+    else:
+        std_logger.info("✅ 浏览器已关闭，避免进程驻留")
+        page.quit()
+        exit(1)
 
+@require_browser_alive
 async def open_server_overview_page():
     global std_logger
     if page.url.startswith("https://accounts.zampto.net/"):
@@ -265,10 +290,11 @@ async def open_server_overview_page():
 
     url = 'https://hosting.zampto.net/?page=overview'
     page.get(url)
-    await asyncio.sleep(random.randint(3, 6))
+    std_logger.info("等待cookie选项出现")
+    await asyncio.sleep(random.randint(10, 15))
     click_if_cookie_option(page)
 
-
+@require_browser_alive
 async def login():
     global info
     url = "https://accounts.zampto.net/auth"
@@ -286,11 +312,11 @@ async def main():
     global std_logger
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     setup(user_agent)
-    # dev_setup()
     try:
         await login()
         std_logger.debug(f"url_now:{page.url}")
         capture_screenshot("login.png")
+        await asyncio.sleep(1)
         await open_server_overview_page()
         std_logger.debug(f"url_now:{page.url}")
         capture_screenshot("server_overview.png")
@@ -304,8 +330,7 @@ async def main():
         print(f"执行过程中出现错误: {e}")
         # 可以选择记录日志或发送错误通知
     finally:
-        page.quit()
-        std_logger.info("浏览器已关闭，避免进程驻留")
+        exit_process()
 
 # 在脚本入口点运行
 if __name__ == "__main__":
