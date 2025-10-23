@@ -8,7 +8,14 @@ import logging
 import random
 import requests
 from datetime import datetime
+from time import sleep
 import argparse
+#解析url中的id
+from urllib.parse import urlparse, parse_qs
+def get_id_from_url(url):
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+    return query_params.get('id', [None])[0]
 #解析参数
 parser = argparse.ArgumentParser(description="-k 在脚本运行结束后不结束浏览器")
 parser.add_argument('-k', '--keep', action='store_true', help='启用保留模式')
@@ -185,7 +192,6 @@ def check_renew_result(tab):
     global info
     renew_notifacation = tab.ele('x:// *[ @ id = "renewalSuccess"] / div', timeout=15)
     server_name_span = page.ele('x://*[@id="js-check"]/div[2]/div/div[1]/h1/span[2]', timeout=15)
-    info += f'🍕 Zampto续期通知\n'
     if not server_name_span:
         info += f'❌ [严重错误] 无法检查服务器存活时间状态，已终止程序执行！\n'
         print("❌ [严重错误] 无法检查服务器存活时间状态，已终止程序执行！")
@@ -194,11 +200,12 @@ def check_renew_result(tab):
     if renew_notifacation:
         info += f'✅ 服务器 [{server_name}] 续期成功\n'
         print(f'✅ 服务器 [{server_name}] 续期成功')
+        sleep(5)
         report_left_time(server_name)
     else:
         info += f'❌ [服务器: {server_name}] 续期失败\n'
         print(f'❌ [服务器: {server_name}] 续期失败')
-
+        report_left_time(server_name)
 
 def report_left_time(server_name):
     global info
@@ -239,13 +246,14 @@ async def open_server_tab():
         server_list.append(a.attr('href'))
     if not server_list:
         error_exit("⚠️ server_list 为空，跳过服务器续期流程")
+    std_logger.info(f"待续期服务器：{server_list}")
     for s in server_list:
         page.get(s)
         await asyncio.sleep(5)
         renew_server(page)
         check_renew_result(page)
-        await asyncio.sleep(3)
-        capture_screenshot(f"{s}.png")
+        ser_id=get_id_from_url(s)
+        capture_screenshot(f"{ser_id}.png")
 
 
 def error_exit(msg):
@@ -259,7 +267,7 @@ def exit_process():
         exit(1)
     else:
         std_logger.info("✅ 浏览器已关闭，避免进程驻留")
-        page.quit()
+        browser.quit()
         exit(1)
 
 @require_browser_alive
@@ -316,7 +324,6 @@ async def main():
         await login()
         std_logger.debug(f"url_now:{page.url}")
         capture_screenshot("login.png")
-        await asyncio.sleep(1)
         await open_server_overview_page()
         std_logger.debug(f"url_now:{page.url}")
         capture_screenshot("server_overview.png")
