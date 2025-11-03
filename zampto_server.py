@@ -496,17 +496,20 @@ async def main():
 if __name__ == "__main__":
     
     if iargs.retry > 0 :
-        for attempt in range(iargs.retry):  # 包括第一次尝试
+        for attempt in range(1,iargs.retry + 1):  # 包括第一次尝试
             success = asyncio.run(main())
             if success==0:
                 std_logger.debug("执行成功，无需重试")
+                exit_process(0)
                 break
             else:
-                std_logger.debug(f"第 {attempt+1} 次执行失败")
+                std_logger.debug(f"第 {attempt} 次执行失败")
                 if attempt < iargs.retry:
                     std_logger.debug("准备重试...")
                 else:
                     std_logger.debug("已达到最大重试次数")
+        else:
+            exit_process(success)
     else:
-        asyncio.run(main())
-        exit_process()
+        success=asyncio.run(main())
+        exit_process(success)
