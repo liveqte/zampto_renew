@@ -198,7 +198,7 @@ def setup(user_agent: str, user_data_path: str = None):
         options.set_user_data_path(user_data_path)
     # 创建 Chromium 浏览器对象
     browser = attach_browser()
-    if browser is None or not browser.alive:
+    if browser is None or not browser.states.is_alive:
         # 接管失败，启动新浏览器
         browser = Chromium(options)
 
@@ -220,7 +220,7 @@ def attach_browser(port=9222):
     try:
         if is_port_open():
             browser = Chromium(port)
-            if browser.alive:
+            if browser.states.is_alive:
                 print(f"✅ 成功接管浏览器（端口 {port}）")
                 return browser
             print("❌ 接管失败，浏览器未响应")
