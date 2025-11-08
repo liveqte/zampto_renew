@@ -105,16 +105,19 @@ def check_google():
 def exit_process(num=0):
     global iargs,info,tgbot_token
     if info and info.strip():
-        info="ℹ️ Zampto服务器续期通知\n"+info
+        info = f"ℹ️ Zampto服务器续期通知\n用户：{username}\n{info}"
         if check_google() and tgbot_token and user_id :
             tg_notifacation(info)
     if iargs.keep:
+        if page.url.startswith("https://hosting.zampto.net/?page=server"):
+            page.get("https://hosting.zampto.net/?page=overview")
+            print("✅ 跳回overview页面。")
         print("✅ 启用了 -k 参数，保留浏览器模式")
     else:
         std_logger.info("✅ 浏览器已关闭，避免进程驻留")
-        save_close_broser()
+        safe_close_broser()
     exit(num)  
-def save_close_broser():
+def safe_close_broser():
     if 'browser' in globals() and browser:
         try:
             browser.quit()
@@ -127,7 +130,7 @@ def error_exit(msg):
     global std_logger,info,iargs
     std_logger.debug(f"[ERROR] {msg}")
     info+=f"[ERROR] {msg}\n"
-    exit_process(1)
+    exit(1)
 
 async def get_latest_tab_safe():
     loop = asyncio.get_event_loop()
@@ -232,8 +235,51 @@ def attach_browser(port=9222):
         return None
 
 async def dev_setup():
-    pass
+    global options
+    global page,browser
+    user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+    options = (
+        ChromiumOptions()
+        .incognito(True)
+        .set_user_agent(user_agent)
+        .set_argument('--guest')
+        .set_argument('--no-sandbox')
+        .set_argument('--disable-gpu')
+        .set_argument('--window-size=1280,800')
+        .set_argument('--remote-debugging-port=9222')
+        .set_browser_path(binpath)
+    )
     
+    if 'DISPLAY' not in os.environ:
+        options.headless(True)
+        options.set_argument('--headless=new') 
+        std_logger.info("✅ DISPLAY环境变量为空，浏览器使用无头模式")
+    else:
+        options.headless(False)
+        std_logger.info("✅ DISPLAY环境变量存在，浏览器使用正常模式")
+    browser = attach_browser()
+    # if browser is None or not browser.alive:
+    #     # 接管失败，启动新浏览器
+    #     browser = Chromium(options)
+    # await test()
+    # page = browser.latest_tab
+    # exit_code=await continue_execution()
+    # await open_web()
+    # await solve_turnstile(std_logger)
+    # print(browser.tab_ids)
+    # browser.quit()
+    # print(f"browser{browser}")
+    # print(f"browser{browser.tabs_count}")
+    # try:
+        
+    #     print("成功获取页面对象")
+    # except asyncio.TimeoutError:
+    #     print("获取 latest_tab 超时，可能页面崩溃")
+    #     browser.new_tab('about:blank')
+        # browser.refresh()  # 或 
+        
+    
+
 def inputauth(inpage):
     u = inpage.ele('x://*[@id="email"]')
     u.input(username)
@@ -290,7 +336,7 @@ async def solve_turnstile(logger: logging.Logger):
     yof = random.randint(5, 8)
     checkbox.offset(x=xof, y=yof).click(by_js=False)
     std_logger.info(f"✅ 找到验证框，点击{checkbox}")
-    await wait_for(5)
+    await wait_for(10,12)
     capture_screenshot(f"cf_result.png")
 
 def click_if_cookie_option(tab):
@@ -335,13 +381,14 @@ def report_left_time(server_name):
 @require_browser_alive
 async def open_server_tab():
     global std_logger
-    manage_server = page.eles("x://a[contains(@href, '?page=server')]", timeout=15)
+    manage_server = page.eles("x://a[contains(@href, '?page=server')]", timeout=3)
     std_logger.info(manage_server)
     std_logger.debug(f"url_now:{page.url}")
     server_list = []
     for a in manage_server:
         server_list.append(a.attr('href'))
     if not server_list:
+        capture_screenshot(f"serverlist_overview.png")
         error_exit("⚠️ server_list 为空，跳过服务器续期流程")
     std_logger.info(f"待续期服务器：{server_list}")
     for s in server_list:
@@ -367,18 +414,18 @@ async def hosting_login():
     await wait_for(7,10)
 @require_browser_alive
 async def open_server_overview_page():
-    if page.url.endswith("hosting.zampto.net/auth/") :
-        login_hosting= page.ele('x://*[@class="login-btn pulse"]', timeout=15)
-        if login_hosting:
-            std_logger.info(f"找到login_or_sign_with_zampto点击{login_hosting}")
-            xof = random.randint(20, 60)
-            yof = random.randint(5, 30)
-            login_hosting.offset(x=xof, y=yof).click(by_js=False)
-            await wait_for(10,15)
-        else:
-            std_logger.error("不能找到login_or_sign_with_zampto按钮,跳过")
+    # if page.url.endswith("hosting.zampto.net/auth/") :
+    login_hosting= page.ele('x://*[@class="login-btn pulse"]', timeout=15)
+    if login_hosting:
+        std_logger.info(f"找到login_or_sign_with_zampto点击{login_hosting}")
+        xof = random.randint(20, 60)
+        yof = random.randint(5, 30)
+        login_hosting.offset(x=xof, y=yof).click(by_js=False)
+        await wait_for(10,15)
     else:
-        std_logger.info("你居然直接跳过hosting二阶段登录，这不可能发生")
+        std_logger.error("不能找到login_or_sign_with_zampto按钮,跳过")
+    # else:
+    #     std_logger.info("跳过hosting二阶段登录")
 
     url = 'https://hosting.zampto.net/?page=overview'
     page.get(url)
@@ -394,11 +441,11 @@ async def login():
         login_deny=False
         await wait_for(10,15)
     await solve_turnstile(std_logger) 
-    await wait_for(7,9)
+    await wait_for(2)
     clickloginin(page)
-
+    await wait_for(10,15)
     if "/auth" in page.url:
-        msg = f"⚠️ {username}登录失败，请检查认证信息是否正确，若正确，可能是CF盾阻止了此IP访问，请尝试换一个的网络环境下执行"
+        msg = f"⚠️ {username}登录失败，请检查认证信息是否正确，若正确，可能是CF盾阻止了此IP访问，请尝试-r参数增加重试次数，或者尝试换一个的网络环境下执行"
         login_deny=True
         error_exit(msg)
     else:
@@ -451,17 +498,18 @@ async def continue_execution(current_url: str = ""):
                 await result
             
             std_logger.debug(f"步骤 {step_name} 执行完成")
+            await wait_for(5,7)
             std_logger.debug(f"当前URL: {page.url if page else 'N/A'}")
 
-            await wait_for(2)
+            
             # 截图记录
             screenshot_name = f"{step_name}_{i}.png"
-            if start_index!=2:
-                capture_screenshot(screenshot_name)
+            # if start_index!=2:
+            capture_screenshot(screenshot_name)
             
-            # 可选：在每个步骤之间添加延迟
+            # 给截图一点时间
             if i < len(steps) - 1:  # 不是最后一步
-                await wait_for(5)
+                await wait_for(3)
                 
         except Exception as e:
             std_logger.error(f"步骤 {step_name} 执行失败: {e}")
@@ -497,6 +545,7 @@ if __name__ == "__main__":
     
     if iargs.retry > 0 :
         for attempt in range(1,iargs.retry + 1):  # 包括第一次尝试
+            info+=f"开始第 {attempt} 次尝试，共 {iargs.retry} 次机会\n"
             success = asyncio.run(main())
             if success==0:
                 std_logger.debug("执行成功，无需重试")
