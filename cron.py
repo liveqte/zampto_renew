@@ -17,7 +17,8 @@ def log(message: str, retry=False):
     print(f"[{now}] [{task_type}] {message}")
 
 def job(retry=False):
-    result = subprocess.run([Pybin, task])
+    with open("task.log", "a", encoding="utf-8") as logfile:
+        result = subprocess.run([Pybin, task], stdout=logfile, stderr=logfile)
     if result.returncode == 0:
         log("✅ corn task excuted success",retry)
     else:
