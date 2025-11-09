@@ -1,4 +1,4 @@
-name: dockerfile.cron build and publish
+name: Dockerfile.cron build and publish
 
 on:
   push:
