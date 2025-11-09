@@ -29,6 +29,6 @@ def job(retry=False):
 
 scheduler = BlockingScheduler(timezone=LOCAL_TZ)
 
-scheduler.add_job(job, 'interval', seconds=10, next_run_time=datetime.now(LOCAL_TZ))
+scheduler.add_job(job, 'interval', hours=48, next_run_time=datetime.now(LOCAL_TZ))
 
 scheduler.start()
