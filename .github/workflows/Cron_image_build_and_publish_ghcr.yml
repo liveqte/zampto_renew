@@ -7,6 +7,7 @@ on:
       - zampto_server.py
       - requirements.txt
       - cron.py
+      - dockerfile.cron
   workflow_dispatch:
 env:
   REGISTRY: ghcr.io
