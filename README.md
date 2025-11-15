@@ -1,5 +1,13 @@
 ## 2025年11月15号更新
-发现cf盾过不过和user-agent有关系，但是不知道是不是所有环境下都是如此，不管怎么样，同一IP下如果正常情况下可以过CF盾，开启脚本后却过不了，请考虑替换user-agent。
+新发现:cf盾过不过和user-agent有关系，但是不知道是不是所有环境下都是如此，
+
+不管怎么样，同一IP下如果正常情况下可以过CF盾，开启脚本后却过不了，请考虑替换user-agent。
+
+公开免费的获取user-agent的API:
+
+http://106.14.221.171:808/tUserAgent/getrandomua
+
+（注：网上公开收集，本人不为此API做任何保证）
 ## 2025年11月9号更新
 - 增加cron镜像，可以长时间运行并托管在容器平台。只需要将docker标签从latest变成cron，如ghcr.io/liveqte/zampto_renew:cron。
 - 48小时定时自动续期。
